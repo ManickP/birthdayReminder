@@ -6,10 +6,11 @@ import logging
 fileName = "ImportantDates.txt"
 daysToAlert = 14
 poURL = "https://api.pushover.net/1/messages.json"
-logTime = datetime.datetime.now()
+dateTimeStamp = datetime.datetime.strftime(
+    datetime.datetime.now(), '%d_%b_%Y_%H%M%S')
 
 logging.basicConfig(
-    filename=f'logs/birthdayReminder_{logTime.date()}_{logTime.time()}.txt', filemode='w', format='%(asctime)s - %(levelname)s - %(message)s', level=logging.INFO)
+    filename=f'logs/birthdayReminder_{dateTimeStamp}.txt', filemode='w', format='%(asctime)s - %(levelname)s - %(message)s', level=logging.INFO)
 
 
 def monthNumeric(month):
