@@ -133,6 +133,5 @@ birthdayList = transformData(cleanedData)
 alertList = eventToSend(birthdayList)
 if len(alertList) > 0:
     message = messageStr(alertList)
-    print(message)
     notification("Event Remider", message)
 logging.info(f'Quitting program')
