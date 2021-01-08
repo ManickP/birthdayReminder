@@ -1,10 +1,15 @@
 import datetime
 import requests
 import os
+import logging
 
 fileName = "ImportantDates.txt"
 daysToAlert = 14
 poURL = "https://api.pushover.net/1/messages.json"
+logTime = datetime.datetime.now()
+
+logging.basicConfig(
+    filename=f'logs/birthdayReminder_{logTime}.txt', filemode='w', format='%(asctime)s - %(levelname)s - %(message)s', level=logging.INFO)
 
 
 def monthNumeric(month):
@@ -46,11 +51,17 @@ def rowSplitterDate(row, input):
 
 def filereader(fileName):
     cleanedData = []
-    with open(fileName, "r", encoding='utf-8') as inputFile:
-        content = inputFile.readlines()
-        for row in content:
-            cleanedData.append(row.rstrip())
-        return cleanedData
+    try:
+        with open(fileName, "r", encoding='utf-8') as inputFile:
+            content = inputFile.readlines()
+            for row in content:
+                cleanedData.append(row.rstrip())
+            return cleanedData
+    except FileNotFoundError:
+        message = f"Could not find file {fileName}"
+        logging.warning(message)
+        notification("WARN birthdayReminder", message)
+        exit()
 
 
 def eventUpdater(row):
@@ -94,6 +105,7 @@ def eventToSend(birthdayList):
         elif currDate.weekday() == 5 and dateFromList > currDate and dateFromList <= endDate:
             alertList.append(
                 f'Upcoming in next {daysToAlert} days --> {name}, {event} on {date}')
+    logging.info(f'The complete alertList is {alertList}')
     return alertList
 
 
@@ -102,16 +114,18 @@ def messageStr(alertList):
     return message
 
 
-def notification(message):
+def notification(title, message):
     token = os.environ.get("BR_TOKEN")
     user = os.environ.get("PO_USER")
     data = {"token": token,
             "user": user,
-            "title": "Event Remider",
+            "title": title,
             "message": message}
     r = requests.post(poURL, json=data)
+    logging.info(f'The status code calling {poURL} is {r.status_code}')
 
 
+logging.info(f'Starting program on {today("T")}')
 cleanedData = filereader(fileName)  # Reads the input txt file
 # Transform to a list of format yyyy-mm-dd,event,name
 birthdayList = transformData(cleanedData)
@@ -120,4 +134,5 @@ alertList = eventToSend(birthdayList)
 if len(alertList) > 0:
     message = messageStr(alertList)
     print(message)
-    notification(message)
+    notification("Event Remider", message)
+logging.info(f'Quitting program')
