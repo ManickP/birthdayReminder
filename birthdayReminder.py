@@ -121,8 +121,8 @@ def notification(title, message):
             "user": user,
             "title": title,
             "message": message}
-    #r = requests.post(poURL, json=data)
-    #logging.info(f'The status code calling {poURL} is {r.status_code}')
+    r = requests.post(poURL, json=data)
+    logging.info(f'The status code calling {poURL} is {r.status_code}')
 
 
 logging.info(f'Starting program on {today("T")}')
