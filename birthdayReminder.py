@@ -9,7 +9,7 @@ poURL = "https://api.pushover.net/1/messages.json"
 logTime = datetime.datetime.now()
 
 logging.basicConfig(
-    filename=f'logs/birthdayReminder_{logTime}.txt', filemode='w', format='%(asctime)s - %(levelname)s - %(message)s', level=logging.INFO)
+    filename=f'logs/birthdayReminder_{logTime.date()}_{logTime.time()}.txt', filemode='w', format='%(asctime)s - %(levelname)s - %(message)s', level=logging.INFO)
 
 
 def monthNumeric(month):
@@ -121,8 +121,8 @@ def notification(title, message):
             "user": user,
             "title": title,
             "message": message}
-    r = requests.post(poURL, json=data)
-    logging.info(f'The status code calling {poURL} is {r.status_code}')
+    #r = requests.post(poURL, json=data)
+    #logging.info(f'The status code calling {poURL} is {r.status_code}')
 
 
 logging.info(f'Starting program on {today("T")}')
