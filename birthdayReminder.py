@@ -1,8 +1,10 @@
 import datetime
-
+import requests
+import os
 
 fileName = "ImportantDates.txt"
 daysToAlert = 14
+poURL = "https://api.pushover.net/1/messages.json"
 
 
 def monthNumeric(month):
@@ -24,7 +26,7 @@ def today(input):
     elif input.upper() == "D":
         return today.day
     elif input.upper() == "T":
-        return today
+        return today.date()
     else:
         return None
 
@@ -32,12 +34,12 @@ def today(input):
 def rowSplitterDate(row, input):
     rowSplit = row.split(",")
     date = datetime.datetime.strptime(rowSplit[0], '%Y-%m-%d')
-    if input.upper() == "M":
+    if input.upper() == "M":  # Only Month
         return date.month
-    elif input.upper() == "D":
+    elif input.upper() == "D":  # Only Date
         return date.day
-    elif input.upper() == "F":
-        return date
+    elif input.upper() == "F":  # Full Date
+        return date.date()
     else:
         return date.year
 
@@ -73,37 +75,49 @@ def transformData(content):
     return birthdayList
 
 
-def eventCheckerCurrMonth(birthdayList):
-    currMonth = today("M")
-    currentMonthEventList = []
+def eventToSend(birthdayList):
+    currDate = today("T")
+    tomorrow = currDate + datetime.timedelta(days=1)
+    endDate = currDate + datetime.timedelta(days=daysToAlert)
+    alertList = []
     for entry in birthdayList:
-        monthInList = rowSplitterDate(entry, "M")
-        if monthInList == currMonth:
-            currentMonthEventList.append(entry)
-    return currentMonthEventList
-
-
-def eventToSend(currentMonthList):
-    startDate = today("T")
-    endDate = startDate + datetime.timedelta(days=daysToAlert)
-    todayList = []
-    nextTwoWeekList = []
-    for entry in currentMonthList:
         dateFromList = rowSplitterDate(entry, "F")
         date, event, name = entry.split(",")
-        date = datetime.datetime.strptime(date, '%Y-%m-%d')
+        date = datetime.datetime.strptime(
+            date, '%Y-%m-%d')  # Convert string to date
         date = date.strftime('%d-%b')
-        if dateFromList == startDate:
-            todayList.append(f'{name}, {event} on {date}')
-        elif dateFromList > startDate and dateFromList <= endDate:
-            nextTwoWeekList.append(f'{name}, {event} on {date}')
-    return todayList, nextTwoWeekList
+        if dateFromList == tomorrow:
+            alertList.append(f'Tomorrow --> {name}, {event} on {date}')
+        elif dateFromList == currDate:
+            alertList.append(f'Today --> {name}, {event} on {date}')
+        # Every sat check event for next 2 weeks
+        elif currDate.weekday() == 5 and dateFromList > currDate and dateFromList <= endDate:
+            alertList.append(
+                f'Upcoming in next {daysToAlert} days --> {name}, {event} on {date}')
+    return alertList
+
+
+def messageStr(alertList):
+    message = "\n".join(alertList)
+    return message
+
+
+def notification(message):
+    token = os.environ.get("BR_TOKEN")
+    user = os.environ.get("PO_USER")
+    data = {"token": token,
+            "user": user,
+            "title": "Event Remider",
+            "message": message}
+    r = requests.post(poURL, json=data)
 
 
 cleanedData = filereader(fileName)  # Reads the input txt file
 # Transform to a list of format yyyy-mm-dd,event,name
 birthdayList = transformData(cleanedData)
 # Picks the event for the current month
-currentMonthList = eventCheckerCurrMonth(birthdayList)
-#alertList = eventToSend(currentMonthList)
-todayList, NextTwoWeekList = eventToSend(currentMonthList)
+alertList = eventToSend(birthdayList)
+if len(alertList) > 0:
+    message = messageStr(alertList)
+    print(message)
+    notification(message)
