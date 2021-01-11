@@ -37,6 +37,15 @@ def today(input):
         return None
 
 
+def cutOff():
+    runTime = datetime.datetime.now()
+    currDate = datetime.date.today()
+    day, month, year = currDate.day, currDate.month, currDate.year
+    cutOffTime = datetime.datetime(
+        year, month, day, 12, 0, 0)  # Cut off is noon time
+    return runTime, cutOffTime
+
+
 def rowSplitterDate(row, input):
     rowSplit = row.split(",")
     date = datetime.datetime.strptime(rowSplit[0], '%Y-%m-%d')
@@ -87,7 +96,7 @@ def transformData(content):
     return birthdayList
 
 
-def eventToSend(birthdayList):
+def eventToSend(birthdayList, runTime, cutOffTime):
     currDate = today("T")
     tomorrow = currDate + datetime.timedelta(days=1)
     endDate = currDate + datetime.timedelta(days=daysToAlert)
@@ -98,12 +107,12 @@ def eventToSend(birthdayList):
         date = datetime.datetime.strptime(
             date, '%Y-%m-%d')  # Convert string to date
         date = date.strftime('%d-%b')
-        if dateFromList == tomorrow:
+        if dateFromList == tomorrow and runTime > cutOffTime:
             alertList.append(f'Tomorrow --> {name}, {event} on {date}')
-        elif dateFromList == currDate:
+        elif dateFromList == currDate and runTime < cutOffTime:
             alertList.append(f'Today --> {name}, {event} on {date}')
         # Every sat check event for next 2 weeks
-        elif currDate.weekday() == 5 and dateFromList > currDate and dateFromList <= endDate:
+        elif currDate.weekday() == 5 and dateFromList > currDate and dateFromList <= endDate and runTime > cutOffTime:
             alertList.append(
                 f'Upcoming in next {daysToAlert} days --> {name}, {event} on {date}')
     logging.info(f'The complete alertList is {alertList}')
@@ -127,11 +136,13 @@ def notification(title, message):
 
 
 logging.info(f'Starting program on {today("T")}')
+runTime, cutOffTime = cutOff()  # Cut off time created to support cronjob set
+logging.info(f'runTime -> {runTime} cutOffTime -> {cutOffTime}')
 cleanedData = filereader(fileName)  # Reads the input txt file
 # Transform to a list of format yyyy-mm-dd,event,name
 birthdayList = transformData(cleanedData)
 # Picks the event for the current month
-alertList = eventToSend(birthdayList)
+alertList = eventToSend(birthdayList, runTime, cutOffTime)
 if len(alertList) > 0:
     message = messageStr(alertList)
     notification("Event Remider", message)
