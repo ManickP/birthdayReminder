@@ -10,7 +10,7 @@ dateTimeStamp = datetime.datetime.strftime(
     datetime.datetime.now(), '%d_%b_%Y_%H%M%S')
 
 logging.basicConfig(
-    filename=f'logs/birthdayReminder_{dateTimeStamp}.txt', filemode='w', format='%(asctime)s - %(levelname)s - %(message)s', level=logging.INFO)
+    filename=f'logs/birthdayReminder_{dateTimeStamp}.log', filemode='w', format='%(asctime)s - %(levelname)s - %(message)s', level=logging.INFO)
 
 
 def monthNumeric(month):
@@ -146,4 +146,6 @@ alertList = eventToSend(birthdayList, runTime, cutOffTime)
 if len(alertList) > 0:
     message = messageStr(alertList)
     notification("Event Remider", message)
+else:
+    logging.info(f"Skipped calling {poURL}")
 logging.info(f'Quitting program')
