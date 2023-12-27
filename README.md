@@ -6,7 +6,7 @@ A python program to remind of upcoming events e.g. bday and anniversary by readi
 
 ---
 
-## How it works
+## How the code works
 
 1. Birthday are read from input text file of format
 
